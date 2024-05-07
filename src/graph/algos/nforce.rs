@@ -1,14 +1,10 @@
-use crate::graph::{
-    utils::quadtree::{newQuadTreeFromGraph, QuadTreeNode},
-    Graph,
-};
+use crate::graph::{utils::quadtree::QuadTreeNode, Graph};
 
 pub struct NForce {
     pub alpha: f32,
     pub link_distance: f32,
     pub link_strength: f32,
     pub vertex_strength: f32,
-    pub quadtree: QuadTreeNode,
 }
 
 impl NForce {
@@ -18,7 +14,6 @@ impl NForce {
             link_distance: 30.0,
             link_strength: 1.0,
             vertex_strength: -30.0,
-            quadtree: newQuadTreeFromGraph(graph),
         }
     }
 

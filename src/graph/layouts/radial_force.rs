@@ -1,19 +1,26 @@
-use crate::graph::{
-    algos::{apsp, cnc},
-    Graph,
+use crate::{
+    graph::{
+        algos::{apsp, cnc},
+        Graph,
+    },
+    log,
 };
 use std::vec;
+use wasm_bindgen::prelude::*;
 
 //https://link.springer.com/content/pdf/10.1007/978-3-642-11805-0_12.pdf
+
+#[wasm_bindgen]
 pub struct RadialForce {
-    pub d: Vec<Vec<f32>>,
-    pub w: Vec<Vec<f32>>,
-    pub r: Vec<f32>, // radius vector
+    d: Vec<Vec<f32>>,
+    w: Vec<Vec<f32>>,
+    r: Vec<f32>, // radius vector
     pub line_length: f32,
 }
-
+#[wasm_bindgen]
 impl RadialForce {
-    pub fn new(graph: &mut Graph, node_id: String, mut line_length: f32) -> RadialForce {
+    #[wasm_bindgen(constructor)]
+    pub fn new(graph: &mut Graph, node_id: &str, mut line_length: f32) -> RadialForce {
         graph.calc_degree();
         if line_length == 0. {
             line_length = 200.;
@@ -23,16 +30,19 @@ impl RadialForce {
             let sort_nodes = Self::sort_nodes_by_degree(&graph);
             node_index = sort_nodes[0];
         } else {
-            node_index = graph.vertexs_map[&node_id];
+            if !graph.vertexs_map.contains_key(node_id) {
+                log(&format!("node {} not found", node_id));
+                panic!("node not found");
+            }
+            node_index = graph.vertexs_map[node_id];
         }
         // set 0,0 to default position
-        graph.set_vertex_position(node_index as usize, vec![0., 0.]);
+        graph.set_vertex_position(node_index as usize, vec![0., 0., 0.]);
         // calculate the position of  node's neighbors
         let mut d = apsp::make_floyd_warshall(graph);
         let max_distance = Self::get_max_distance(&d);
         // get cnc value
         let c = cnc::make_cnc(&d);
-
         Self::handle_infinite_loop(max_distance + 1., &mut d, node_index as usize);
         //make radius
         let r = {
@@ -60,7 +70,6 @@ impl RadialForce {
         };
         //repair_distance
         Self::repair_distance(&mut d, line_length);
-
         // make w
         let w = Self::make_weight_matrix(&d);
         RadialForce {
@@ -120,7 +129,7 @@ impl RadialForce {
                 x = rand::random::<f32>();
                 y = rand::random::<f32>();
             }
-            graph.set_vertex_position(i, vec![x, y])
+            graph.set_vertex_position(i, vec![x, y, 0.])
         }
     }
 
@@ -162,8 +171,8 @@ impl RadialForce {
     fn sort_nodes_by_degree(graph: &Graph) -> Vec<usize> {
         let mut nodes: Vec<usize> = (0..graph.vertexes.len()).collect();
         nodes.sort_by(|a, b| {
-            let a_degree = &graph.degrees[*a as usize];
-            let b_degree = &graph.degrees[*b as usize];
+            let a_degree = &graph.vertexes[*a].degree;
+            let b_degree = &graph.vertexes[*b].degree;
             a_degree.cmp(&b_degree)
         });
         nodes
@@ -216,6 +225,14 @@ impl RadialForce {
                     d[i][j] = v * line_length;
                 }
             }
+        }
+    }
+    pub fn default() -> Self {
+        Self {
+            d: vec![],
+            w: vec![],
+            r: vec![],
+            line_length: 200.,
         }
     }
 }

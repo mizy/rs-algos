@@ -1,9 +1,8 @@
 use crate::graph::{algos::apsp::make_floyd_warshall, Graph};
 
-pub fn cnc(graph: &mut Graph) -> *const f32 {
+pub fn run(graph: &mut Graph) -> Vec<f32> {
     let dist = make_floyd_warshall(graph);
-    let arr = make_cnc(&dist);
-    arr.as_ptr()
+    make_cnc(&dist)
 }
 
 pub fn make_cnc(d: &Vec<Vec<f32>>) -> Vec<f32> {

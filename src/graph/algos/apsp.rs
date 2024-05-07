@@ -1,6 +1,7 @@
 use crate::graph::Graph;
 
-pub fn apsp(graph: &mut Graph) -> *const f32 {
+/// every algo need return the result's ownership to js, so we need to return a Vec<f32>
+pub fn run(graph: &mut Graph) -> Vec<f32> {
     let dist = make_floyd_warshall(graph);
     let mut arr = vec![0.; dist.len() * dist.len()];
     let mut i = 0;
@@ -10,7 +11,7 @@ pub fn apsp(graph: &mut Graph) -> *const f32 {
             i += 1;
         }
     }
-    arr.as_ptr()
+    arr
 }
 
 pub fn make_floyd_warshall(graph: &mut Graph) -> Vec<Vec<f32>> {
@@ -33,6 +34,10 @@ pub fn make_floyd_warshall(graph: &mut Graph) -> Vec<Vec<f32>> {
     for k in 0..len {
         for i in 0..len {
             for j in 0..len {
+                if i == j {
+                    // make sure the self path is 0, because some weight is negative value
+                    continue;
+                }
                 if dist[i][k] + dist[k][j] < dist[i][j] {
                     let new_val = dist[i][k] + dist[k][j];
                     dist[i][j] = new_val;
